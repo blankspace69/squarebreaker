@@ -1,0 +1,561 @@
+
+
+/*
+ * Square Breaker.cpp
+ * AUTHORS Sunil Saurabh
+ * This code simulates a game in which one has to look for ajacent squares and break them &
+ * longer the chain the more you score.
+ */
+#include <stdlib.h>
+#include <stdio.h>
+#include <GL/glut.h>
+#include<math.h>
+#include<time.h>
+#include<stdlib.h>
+#include<conio.h>
+#include <stdarg.h>						// Header File For Variable Argument Routines	( ADD )
+#include<string.h>
+#include <windows.h> 
+
+ int board[6][6]={1,1,1,1,2,1,        //this matrix hold the current value of the colors       
+	              0,1,0,0,2,1,
+				 0,1,1,0,2,1,
+				 0,1,0,0,2,1,
+				 0,1,0,0,2,1,
+				  0,1,1,0,2,1,
+				 };
+int mark[6][6]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};// It holds the position that are adjacent to the square we have selected
+int count=0;
+int tempbrd[6][6],tempmark[6][6];
+int totalscore=0;
+int end=0;
+void Sprint( int x, int y, char *st)
+{
+	int l,i;
+
+	l=strlen( st ); // see how many characters are in text string.
+	glRasterPos2i( x, y); // location to start printing text
+	for( i=0; i < l; i++)  // loop until i is greater then l
+		{
+		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, st[i]); // Print a character on the screen
+	}
+
+}
+
+/*  Clear color value for every square on the board   */
+
+void init(void)
+{
+		srand((unsigned)time(NULL));
+   int i, j;
+   
+     for (i = 0; i < 6; i++) 
+    for (j = 0; j < 6; j ++)
+         board[i][j] = (rand())%3;
+   glClearColor (1.0, 1.0, 1.0, 1.0);
+}
+
+/*  The nine squares are drawn.  In selection mode, each 
+ *  square is given two names:  one for the row and the 
+ *  other for the column on the grid.  The color of each 
+ *  square is determined by its position on the grid, and 
+ *  the value in the board[][] array.
+ */
+void drawSquares(GLenum mode)
+{
+   GLuint i, j;
+    for (i = 0; i <6; i++) {
+	 
+      if (mode == GL_SELECT)
+         glLoadName (i);
+      for (j = 0; j <6; j ++) {
+         if (mode == GL_SELECT)
+           glPushName (j);
+	       if(board[i][j]==1)
+	   {
+         glColor3f (1.0,0.0,0.0);
+		 glRectf (j+.02, i+.02, j+.98, i+.98);
+	   }
+	    if(board[i][j]==2)
+	   {
+		   glColor3f (0.0,1.0,0.0);
+		 glRectf (j+.02, i+.02, j+.98, i+.98);
+	   }
+	   if(board[i][j]==0)
+	   {
+		   glColor3f(0.0,0.0,1.0);
+		  glRectf (j+.02, i+.02, j+.98, i+.98);
+	   }
+          if (mode == GL_SELECT)
+            glPopName ();
+      }
+   }
+   for(i=0;i<6;i++)
+	   for(j=0;j<6;j++)
+	   {
+		   int temp;
+		   temp=board[i][j];
+		   board[i][j]=board[j][i];
+		   board[j][i]=temp;
+	   }
+ 
+ 
+}
+void gameover()
+{
+	 glColor3f(0,0,0);
+		  glRectf (-30, -20, 70, 10);
+}
+/*
+to calculate score based on the*/
+ void   showscore()
+{int i,j;
+		float  src=1;
+	for( i=0;i<6;i++)
+	{	for( j=0;j<6;j++)
+			{
+			if(mark[i][j]==1)
+				src=src*1.5;
+			}
+		
+	}
+	totalscore=totalscore+(int)src;
+	//printf("ur current score is %d\n",totalscore);
+	 
+ }
+	void deletecol1()
+{
+int j=0,i=0;
+ static int count=0;
+for(i=0;i<6;i++)
+{
+ for(j=0;j<6;j++)
+{
+	
+	if(j<5)
+{ int flag=0;
+	for(int k=0;k<6;k++)
+		if(board[k][j]!=3)
+		{
+			flag=1;
+		}
+	if(flag==0)
+	{ count=count+1;
+		for (int k=0;k<6;k++)
+		{
+			if(j<5)
+			{
+			board[k][j]=board[k][j+1];
+			board[k][j+1]=3;
+			count--;
+			}
+			else
+			{
+				count--;
+				board[k][j]=3;
+			}
+		}
+	
+	}
+		
+	}
+ }
+}
+//if(count!=0)
+//	{
+//		deletecol1();
+//	}
+}
+
+
+
+
+/*
+*/
+
+/* the procedure to delete a square*/
+void delete1 (void)
+{int i,j;
+int count[6]={0,0,0,0,0,0};
+for( i=0;i<6;i++)
+		for(int j=0;j<6;j++)
+		{
+			tempbrd[i][j]=board[i][j];
+			tempmark[i][j]=mark[i][j];
+		}
+
+for(j=0;j<6;j++)
+	{
+		int	stack[7]={0,0,0,0,0,0,0};
+		int t=-1;
+		for(i=0;i<6;i++)
+		{
+			if(mark[i][j]==0)
+			{
+				stack[++t]=board[i][j];
+				count[j]=count[j]+1;
+			}
+			
+		}
+		
+		for(i=0;i<6;i++)
+		{
+			board[i][j]=3;
+		}
+		
+		
+  		for(i=5;i>=5-count[j];i--)
+		{
+
+			if(t>=0)
+			{
+				board[i][j]=stack[t--];
+				
+		    }
+					
+		}
+		
+	
+
+}
+//for(i=0;i<6;i++)
+deletecol1();
+
+glutPostRedisplay();
+}
+
+
+
+	
+
+
+/*
+finds the adjecent squares
+*/
+void FindAjacentSquares(int i,int j,int board[6][6])
+{	
+	if(i>=0 && j>=0&& i<6 && j<6)
+	{
+		// mark[i][j]=1;
+		if(i!=5)
+		{
+		if(board[i][j]==board[i+1][j])
+		{
+			if(mark[i+1][j]!= 1)
+			{
+				mark[i+1][j]=1;
+              FindAjacentSquares(i+1,j,board);
+	        }
+		}
+		}
+		if(j!=5)
+		{
+		if(board[i][j]==board[i][j+1])
+		{
+			if(mark[i][j+1]!=1)
+			{
+			mark[i][j+1]=1;
+			FindAjacentSquares(i,j+1,board);
+	    	}
+			}
+		}
+		if(i!=0)
+		{
+		if(board[i][j]==board[i-1][j])
+		{
+			if(mark[i-1][j]!=1)
+			{
+			mark[i-1][j]=1;
+			FindAjacentSquares(i-1,j,board);
+		    }
+		}
+		
+		}
+		if(j!=0)
+		{
+		if(board[i][j]==board[i][j-1])
+		{
+if(mark[i][j-1]!=1)
+{
+			mark[i][j-1]=1;
+			FindAjacentSquares(i,j-1,board);
+		}
+		}	}
+	}
+	//glutPostRedisplay();
+
+
+}
+void checkifgameend()
+{
+	int flag=0;
+	int emtpy1=0;
+	for(int i=0;i<6;i++)
+		for(int j=0;j<6;j++)
+		if(board[i][j]!=3)
+			{
+			emtpy1=1;
+			}
+		
+		if(emtpy1!=0)
+		{
+	for(int i=0;i<6;i++)
+	for(int j=0;j<6;j++)
+	{
+		if(j!=5)
+		{
+		if(board[i][j]==board[i][j+1]&&board[i][j]!=3)
+		{flag=1;
+		}
+		}
+		if(i!=5)
+		{
+		if(board[i][j]==board[i+1][j]&&board[i][j]!=3)
+		{
+			flag=1;
+		}
+		}
+		if(j!=0)
+		{if(board[i][j]==board[i][j-1]&&board[i][j]!=3)
+		{flag=1;
+		}
+		}
+		if(i!=0)
+		{
+		if(board[i][j]==board[i-1][j]&&board[i][j]!=3)
+		{
+			flag=1;
+		}
+		}
+	
+	}
+	if(flag==0)
+	{
+		glMatrixMode(GL_MODELVIEW);  // Tell opengl that we are doing model matrix work. (drawing)
+       glLoadIdentity(); // Clear the model matrix
+
+		printf("the game is over");
+		printf("your total score is %d",totalscore);
+end=1;
+		 
+	}
+		}
+		else{
+					printf("the game is over");
+		printf("your total score is %d",totalscore);
+end=1;
+		
+		}
+}
+
+
+/*  processHits prints out the contents of the 
+ *  selection array.
+ */
+void processHits (GLint hits, GLuint buffer[])
+{
+
+   unsigned int i, j;
+   GLuint ii=0, jj=0, names, *ptr;
+
+  // printf ("hits = %d\n", hits);
+   ptr = (GLuint *) buffer;
+   for (i = 0; i < hits; i++) {	/*  for each hit  */
+      names = *ptr;
+       ptr++;
+  ptr++;ptr++;
+     // printf ("   names are ");
+      for (j = 0; j < names; j++) { /*  for each name */
+ //        printf ("%d ", *ptr);
+         if (j == 0)  /*  set row and column  */
+            ii = *ptr;
+         else if (j == 1)
+            jj = *ptr;
+         ptr++;
+      }
+      printf ("\n");
+
+ //     board[ii][jj] = (board[ii][jj] + 1) % 3;
+   }
+   for(i=0;i<6;i++)
+	   for(j=0;j<6;j++)
+	   {
+		   mark[i][j]=0;
+	   }
+	   if(board[ii][jj]!=3)
+	   {
+   FindAjacentSquares(ii,jj,board);
+     showscore();
+ 
+delete1();
+checkifgameend();
+	   }
+
+//recursive(ii,jj,n);
+  
+}
+
+
+/*  pickSquares() sets up selection mode, name stack, 
+ *  and projection matrix for picking.  Then the 
+ *  objects are drawn.
+ */
+#define BUFSIZE 512
+
+void undo()
+{
+	
+	for(int i=0;i<6;i++)
+		for(int j=0;j<6;j++)
+		{
+			board[i][j]=tempbrd[i][j];
+			mark[i][j]=tempmark[i][j];
+		}
+int j;
+		int  src=1;
+	for( i=0;i<6;i++)
+	{	for( j=0;j<6;j++)
+			{
+			if(mark[i][j]==1)
+				src=src*2;
+			}
+		
+	}
+	if(totalscore>=src)
+	{
+	totalscore=totalscore-src;
+	}
+	glutPostRedisplay();
+}
+void color_menu(int id)
+{
+//	string s[40];
+	switch(id)
+	{
+	case 1: printf("YOUR SCORE WOULD BE :     %d\n",totalscore);
+			 break;
+	case 2: undo();
+		    break;
+	case 3: break;
+	}
+}
+
+void pickSquares(int button, int state, int x, int y)
+{
+   GLuint selectBuf[BUFSIZE];
+   GLint hits;
+   GLint viewport[4];
+   if(end!=1)
+{
+if(button==GLUT_RIGHT_BUTTON || state==GLUT_DOWN)
+   {    
+       
+	   glutCreateMenu(color_menu);
+	   glutAddMenuEntry("show score",1);
+	   glutAddMenuEntry("undo",2);
+	     glutAddMenuEntry("continue",3);
+	   glutAttachMenu(GLUT_RIGHT_BUTTON);
+	   glutPostRedisplay();
+   }
+
+   
+   if (button != GLUT_LEFT_BUTTON || state != GLUT_DOWN)
+   {
+	   return;
+   }
+   glGetIntegerv (GL_VIEWPORT, viewport);
+
+   glSelectBuffer (BUFSIZE, selectBuf);
+   (void) glRenderMode (GL_SELECT);
+
+   glInitNames();
+   glPushName(0);
+
+   glMatrixMode (GL_PROJECTION);
+   glPushMatrix ();
+   glLoadIdentity ();
+/*  create 5x5 pixel picking region near cursor location	*/
+   gluPickMatrix ((GLdouble) x, (GLdouble) (viewport[3] - y), 
+                  5.0, 5.0, viewport);
+   gluOrtho2D (0.0, 6.0, 0.0, 6.0);
+   drawSquares (GL_SELECT);
+   glMatrixMode (GL_PROJECTION);
+   glPopMatrix ();
+   glFlush ();
+   hits = glRenderMode (GL_RENDER);
+   processHits (hits, selectBuf);
+   glutPostRedisplay();
+} 
+}
+void display(void)
+{
+   glClear(GL_COLOR_BUFFER_BIT);
+   drawSquares (GL_RENDER);
+   glFlush();
+   if(end==1)
+{
+	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode (GL_PROJECTION);  // Tell opengl that we are doing project matrix work
+glLoadIdentity();  // Clear the matrix
+glOrtho(-30.0, 70.0, -15.0, 9.0, 0.0, 30.0);   // Setup an Ortho view
+glMatrixMode(GL_MODELVIEW);  // Tell opengl that we are doing model matrix work. (drawing)
+glLoadIdentity(); // Clear the model matrix
+gameover();
+//glDisable(GL_COLOR_MATERIAL);
+//glDisable(GL_LIGHTING);
+glColor3f(1.0, 0.0, 0.3);
+ glClearColor(0.0,0.0,0.0,0.0);
+		 Sprint(-30, 7, "GAME");
+		 glClearColor(0.0,0.0,0.0,0.0);
+		 glColor3f(1.0, 0.3, 0.0);
+		 Sprint(-15,4,"OVER");
+		 char s[100];
+		 sprintf(s,"%d",totalscore);
+		 Sprint(-30,4,"    ");
+        //Sprint(-12,5,s);
+		printf("\n-------------------------------------------------\n");
+		printf("\n-------------------------------------------------\n");
+		printf("\n-------------------------------------------------\n");
+		printf("YOUR SCORE IS      :%d\n",totalscore);
+		// Sprint(-30,5, "game over");
+glFlush();
+}
+}
+
+void reshape(int w, int h)
+{
+   glViewport(0, 0, w, h);
+   glMatrixMode(GL_PROJECTION);
+   glLoadIdentity();
+   gluOrtho2D (0.0, 6.0, 0.0, 6.0);
+   glMatrixMode(GL_MODELVIEW);
+   glLoadIdentity();
+}
+
+void keyboard(unsigned char key, int x, int y)
+{
+   switch (key) {
+      case 27:
+         exit(0);
+         break;
+   }
+}
+
+/* Main Loop */
+int main(int argc, char** argv)
+{
+	 
+   glutInit(&argc, argv);
+   glutInitDisplayMode (GLUT_SINGLE | GLUT_RGB);
+   glutInitWindowSize (200, 200);
+   glutInitWindowPosition (100, 100);
+   glutCreateWindow (argv[0]);
+   init ();
+   glutReshapeFunc (reshape);
+   glutDisplayFunc(display); 
+   glutMouseFunc (pickSquares);
+   glutKeyboardFunc (keyboard);
+   glutMainLoop();
+   return 0; 
+}
+
